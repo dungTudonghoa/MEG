@@ -1,0 +1,480 @@
+\documentclass[11pt,a4paper]{article}
+% Build: latexmk -xelatex -use-biber main.tex
+\usepackage{fontspec}
+\setmainfont{Noto Serif}
+\setsansfont{Noto Sans}
+\setmonofont{DejaVu Sans Mono}
+\usepackage{geometry}
+\geometry{left=2.5cm,right=2.45cm,top=2.7cm,bottom=2.6cm}
+\usepackage{microtype,amsmath,amssymb,mathtools,booktabs,tabularx,array}
+\usepackage{graphicx,tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\usepackage{xcolor}
+\definecolor{ink}{HTML}{16334B}
+\definecolor{accent}{HTML}{116A74}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true,linkcolor=ink,citecolor=accent,urlcolor=accent,
+ pdftitle={Terrain-Aware Path Planning for Wheeled Mobile Robots}}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\setlist[enumerate]{leftmargin=*,topsep=2pt,itemsep=2pt}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize Terrain-aware path planning for UGV}
+\fancyhead[R]{\footnotesize Literature review 2026}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\usepackage{titlesec}
+\titleformat{\section}{\Large\sffamily\bfseries\color{ink}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\sffamily\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\usepackage[backend=biber,style=numeric-comp,sorting=none,maxbibnames=9]{biblatex}
+\addbibresource{references.bib}
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+\begin{titlepage}
+\vspace*{1.7cm}
+{\sffamily\color{accent}\large BÁO CÁO TỔNG QUAN NGHIÊN CỨU\par}
+\vspace{1.1cm}
+{\sffamily\bfseries\color{ink}\fontsize{23}{30}\selectfont
+Lập kế hoạch đường đi có xét địa hình\par
+cho robot di động bánh xe\par}
+\vspace{0.4cm}
+{\sffamily\fontsize{16}{22}\selectfont
+Terrain-Aware Path Planning for Wheeled Mobile Robots\par}
+\vspace{0.7cm}
+{\color{accent}\rule{\textwidth}{1.3pt}}
+\vspace{0.35cm}
+
+{\large\textbf{Nền tảng thuật toán, nghiên cứu 2024--2026 và định hướng luận văn thạc sĩ}\par}
+\vspace{1cm}
+\begin{tabular}{@{}ll@{}}
+Người thực hiện: & \textit{[Điền họ và tên]}\\
+Đơn vị / lớp: & \textit{[Điền thông tin]}\\
+Người hướng dẫn: & \textit{[Điền thông tin]}\\
+Ngày cập nhật: & 08/10/2026\\
+Phiên bản: & 1.0 --- Tổng quan ban đầu
+\end{tabular}
+\vfill
+{\small\color{ink}Đây là báo cáo tổng quan và đề xuất phương pháp thực nghiệm.\\
+Chưa có kết quả thực nghiệm do người viết thực hiện; các research gap là giả thuyết cần xác minh.}
+\end{titlepage}
+
+\begin{abstract}
+\noindent
+\textbf{Tóm tắt.}
+Robot bánh xe tự hành (wheeled unmanned ground vehicle, UGV) hoạt động trên
+địa hình phi cấu trúc cần lựa chọn đường đi không chỉ ngắn mà còn an toàn,
+khả thi về chuyển động và thích ứng khi thông tin bản đồ thay đổi.
+Báo cáo này giới thiệu các khái niệm terrain traversability, 2.5D elevation map,
+path planning và motion planning; phân tích các nhóm thuật toán A*, D* Lite,
+RRT* và Hybrid A*. Tiếp theo là tổng hợp những công trình 2024--2026 về
+rủi ro địa hình, nhận thức đa cảm biến, heuristic học được và ràng buộc
+động học. Dựa trên đối chiếu tài liệu, báo cáo đề xuất các câu hỏi nghiên cứu
+về hiệu chuẩn rủi ro, online replanning và traversability phụ thuộc hướng,
+cùng với bộ baseline và quy trình đánh giá có thể tái lập. Mục tiêu của báo cáo
+là định hướng nghiên cứu thạc sĩ, không tuyên bố một thuật toán hoặc kết quả mới.
+
+\medskip\noindent\textbf{Từ khóa:} UGV; uneven terrain; off-road planning;
+terrain traversability; risk-aware path planning; D* Lite; Hybrid A*.
+\end{abstract}
+\tableofcontents
+\clearpage
+
+\section{Đặt vấn đề}
+\subsection{Động lực nghiên cứu}
+Bản đồ chiếm chỗ 2D đủ dùng cho nhiều bài toán tránh vật cản trong nhà,
+nhưng chưa phản ánh được khả năng di chuyển trên địa hình dốc, gồ ghề,
+có bậc cao hoặc bề mặt dễ trượt. Đường ngắn nhất có thể đi ngang sườn dốc
+lớn, khiến robot mất ổn định hoặc vượt quá khả năng bám của bánh xe.
+Các survey của Papadakis \cite{papadakis2013terrain} và Borges cùng cộng sự
+\cite{borges2022survey} cho thấy đánh giá terrain traversability
+là cầu nối giữa dữ liệu cảm biến, hình học địa hình và hệ thống lập kế hoạch.
+
+Các nghiên cứu gần đây đã mở rộng từ cost map hình học sang lập kế hoạch
+xét động học, rủi ro và tính không chắc chắn của môi trường
+\cite{benrabah2024risk,wang2026winter}.
+Vì vậy, chỉ cộng thêm một trọng số độ dốc vào A* không đủ để chứng minh
+đóng góp học thuật mới.
+
+\subsection{Mục tiêu và phạm vi}
+Báo cáo nhằm: (i) phân biệt thuật ngữ; (ii) mô tả nền tảng
+toán học và thuật toán; (iii) so sánh các công trình liên quan gần đây;
+(iv) xây dựng câu hỏi và phương pháp kiểm chứng cho một đề tài thạc sĩ.
+Đối tượng trọng tâm là robot bánh xe trên bản đồ độ cao 2.5D.
+Bản tổng quan không giả định loại lái cụ thể; khi mô phỏng chuyển động
+sẽ phải lựa chọn rõ giữa differential-drive, skid-steer và Ackermann.
+
+\subsection{Path planning, motion planning và traversability}
+\textbf{Path planning} tìm một đường hình học nối trạng thái đầu và đích.
+\textbf{Motion planning} còn phải xét hướng, thời gian, vận tốc,
+động học hoặc động lực học để bảo đảm đường đi có thể được thực thi.
+\textbf{Traversability estimation} đánh giá địa hình phù hợp đến đâu
+với một robot và trạng thái hoạt động xác định.
+
+Ba khối này có quan hệ phụ thuộc nhưng không thay thế cho nhau.
+Ví dụ một đường đi có độ dốc thấp vẫn có thể không khả thi
+nếu xe không đủ bán kính quay ở một khúc cua. Ngược lại,
+một vùng có bề mặt phẳng không nhất thiết có hệ số ma sát đủ lớn.
+
+\section{Biểu diễn địa hình và mô hình toán}
+\subsection{Bản đồ độ cao 2.5D}
+Bản đồ độ cao có thể mô tả bởi hàm:
+\begin{equation}
+ z=h(x,y),\qquad h:\R^2\rightarrow\R.
+ \label{eq:dem}
+\end{equation}
+Trong trường hợp rời rạc, mỗi ô có độ phân giải không gian \(\Delta\)
+và một hoặc nhiều thống kê như độ cao trung bình, phương sai, độ dốc.
+2.5D có ưu điểm gọn nhẹ nhưng không biểu diễn đúng các bề mặt
+chồng lên nhau như cầu vượt và hang. Point cloud/voxel 3D phù hợp hơn
+với môi trường có cấu trúc phức tạp nhưng đòi hỏi xử lý bổ sung.
+
+\subsection{Slope, roughness, step và footprint}
+Nếu bề mặt khả vi, độ dốc tổng hợp:
+\begin{equation}
+ S(x,y)=\arctan\!\sqrt{
+  \left(\frac{\partial h}{\partial x}\right)^2+
+  \left(\frac{\partial h}{\partial y}\right)^2}.
+ \label{eq:slope}
+\end{equation}
+Theo hướng chuyển động \(\theta\), các đạo hàm có hướng:
+\begin{align}
+ s_{\parallel}(x,y,\theta)
+    &=\nabla h(x,y)^\top(\cos\theta,\sin\theta)^\top,\\
+ s_{\perp}(x,y,\theta)
+    &=\nabla h(x,y)^\top(-\sin\theta,\cos\theta)^\top.
+\end{align}
+Chúng có thể làm đặc trưng gợi ý dốc dọc và dốc ngang,
+nhưng không bằng trực tiếp pitch/roll của thân xe.
+Góc thân còn phụ thuộc kích thước, hệ treo và vị trí bánh.
+
+Một chỉ số độ gồ ghề cục bộ:
+\begin{equation}
+ R=\sqrt{\frac{1}{|\mathcal N|}\sum_{i\in\mathcal N}
+    (z_i-\widehat z_i^{\mathrm{plane}})^2},
+ \label{eq:rough}
+\end{equation}
+với \(\widehat z_i^{\mathrm{plane}}\) là độ cao của mặt phẳng
+khớp trong vùng lân cận. \emph{Step height} có thể gần đúng bởi
+độ chênh cao lớn nhất trong một cửa sổ. Các đại lượng này nhạy với
+độ phân giải, nhiễu và kích thước cửa sổ.
+Ngoài hình học, tính khả thi phụ thuộc đường kính bánh,
+khoảng sáng gầm, tải trọng, cơ cấu lái và độ bám.
+
+\subsection{Pipeline nhận thức đến lập kế hoạch}
+\begin{figure}[htbp]
+\centering
+\begin{tikzpicture}[
+ >=Stealth, node distance=6mm,
+ every node/.style={font=\small},
+ block/.style={draw=ink,rounded corners=3pt,fill=ink!5,
+  text width=11.2cm,align=center,minimum height=0.84cm},
+ focus/.style={draw=accent,very thick,rounded corners=3pt,fill=accent!8,
+  text width=11.2cm,align=center,minimum height=0.9cm}]
+\node[block] (a) {DEM / LiDAR / camera và vùng chưa quan sát};
+\node[block,below=of a] (b) {Trích xuất slope, roughness, step height, uncertainty};
+\node[focus,below=of b] (c) {Robot-aware traversability, giới hạn an toàn và risk map};
+\node[block,below=of c] (d) {Global/local planner: A*, D* Lite, Hybrid A*, RRT*};
+\node[block,below=of d] (e) {Kiểm tra khả thi / mô phỏng / cập nhật bản đồ};
+\foreach \x/\y in {a/b,b/c,c/d,d/e}{\draw[->,thick,accent](\x)--(\y);}
+\end{tikzpicture}
+\caption{Sơ đồ khái niệm của pipeline terrain-aware navigation,
+không phải một thuật toán mới.}
+\label{fig:flow}
+\end{figure}
+
+\section{Các thuật toán nền tảng}
+\subsection{Dijkstra và A*}
+Dijkstra tìm đường có tổng chi phí nhỏ nhất trên đồ thị hữu hạn
+với trọng số không âm. A* \cite{hart1968formal} sử dụng:
+\begin{equation}
+ f(n)=g(n)+h_{\rm heur}(n),
+\end{equation}
+với \(g\) là chi phí từ đầu đến nút \(n\), \(h_{\rm heur}\)
+là ước lượng chi phí còn lại. Với heuristic admissible
+và các điều kiện triển khai thích hợp, A* bảo đảm tính tối ưu
+trên \emph{đồ thị đang giải}; không có bảo đảm an toàn vật lý
+nếu bản đồ hoặc mô hình xe không đúng.
+
+\subsection{D* Lite và Field D*}
+D* Lite \cite{koenig2002dstarlite} tái sử dụng thông tin tìm kiếm
+khi chi phí trên đồ thị thay đổi, phù hợp với bản đồ được cập nhật
+trong quá trình di chuyển. Field D* \cite{ferguson2006field}
+dùng nội suy để giảm phụ thuộc vào các hướng đi rời rạc
+của lưới và cải thiện hình dạng đường đi.
+
+\subsection{RRT* và Hybrid A*}
+RRT* và PRM* thuộc họ lấy mẫu với các kết quả quan trọng
+về tính tối ưu tiệm cận \cite{karaman2011optimal}.
+Hybrid A* tìm kiếm trên trạng thái có hướng,
+sử dụng motion primitives để phản ánh giới hạn lái.
+Nhìn chung, Hybrid A* có thể đánh giá tính khả thi chuyển động
+tốt hơn A* trên ô lưới 2D, đổi lại là không gian tìm kiếm lớn hơn.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Vai trò và giới hạn của các baseline được đề xuất.}
+\begin{tabularx}{\textwidth}{@{}p{2.0cm}YYY@{}}
+\toprule
+Planner & Ưu điểm & Giới hạn & Nên dùng để \\
+\midrule
+A* & Dễ cài đặt, kết quả giải thích được & Phụ thuộc biểu diễn lưới & Benchmark path cost \\
+D* Lite & Tận dụng tìm kiếm cũ khi map thay đổi & Cần cập nhật chi phí cạnh đúng & Benchmark replanning \\
+RRT* & Linh hoạt trong không gian liên tục & Phụ thuộc số mẫu và steering & So sánh sampling-based \\
+Hybrid A* & Xét heading và giới hạn lái & Trạng thái lớn; cần mô hình xe & Kiểm tra kinematic feasibility \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Tổng quan nghiên cứu liên quan}
+\subsection{Các survey quan trọng}
+Papadakis \cite{papadakis2013terrain} hệ thống hóa phương pháp
+phân tích traversability; Borges và cộng sự \cite{borges2022survey}
+phân tích các đặc trưng cảm biến, thuật toán và tập dữ liệu.
+Benrabah và cộng sự \cite{benrabah2024risk} chỉ ra nhiều cách
+định nghĩa rủi ro và sự cần thiết phải đánh giá rủi ro trên
+toàn đường đi. Wang và cộng sự \cite{wang2024survey}
+tổng quan path planning trong môi trường phi cấu trúc.
+Điểm rút ra là traversability luôn phải xét trong bối cảnh
+robot, dữ liệu và nhiệm vụ cụ thể.
+
+\subsection{Các nghiên cứu trực tiếp trên UGV}
+Zhang và cộng sự \cite{zhang2022wheeled} sử dụng bản đồ có xét
+độ dốc, bậc và độ gồ ghề, A* cho global path và Q-learning
+cho tránh chướng ngại cục bộ khi bản đồ chưa biết đủ.
+Lee và cộng sự \cite{lee2023uncertainty} xem xét uncertainty-aware
+navigation trên địa hình 3D. Wang và cộng sự \cite{wang2024history}
+đề xuất cây tìm kiếm kết hợp đồ thị lịch sử để đi trên địa hình
+chưa biết trước. Vì vậy, riêng ý tưởng đưa uncertainty
+vào planner không còn mới.
+
+Feng và cộng sự \cite{feng2025constraint} kết hợp traversability,
+Patch-RRT* và tối ưu quỹ đạo có ràng buộc trong môi trường công trường.
+Ji và cộng sự \cite{ji2025nnpp} nghiên cứu mô hình heuristic dựa trên học máy
+để thu hẹp không gian tìm đường. Beycimen và cộng sự
+\cite{beycimen2026fusion} kết hợp thông tin hình học và bề ngoài
+để tạo traversability map thời gian thực. Công trình này
+xuất bản trực tuyến cuối 2025 và được xếp trong tập tạp chí năm 2026.
+
+Gai và cộng sự \cite{gai2026framework} kết hợp thông tin địa hình,
+giới hạn động học và độ trơn của chuyển động trong framework
+điều hướng cho xe mặt đất. Wang và cộng sự \cite{wang2026winter}
+mô hình hóa các sự cố trượt, lật và lún trong điều kiện mùa đông
+và tích hợp đánh giá rủi ro với Hybrid A*.
+
+\begin{table}[p]
+\centering\footnotesize
+\caption{Literature matrix. Cột cuối là gợi ý câu hỏi tiếp nối,
+không phải khẳng định các tác giả đã thừa nhận một limitation.}
+\label{tab:lit}
+\begin{tabularx}{\textwidth}{@{}p{2.25cm}p{2.7cm}p{3.05cm}Y@{}}
+\toprule
+Công trình & Bài toán & Phương pháp & Câu hỏi cần tìm hiểu tiếp \\
+\midrule
+Zhang et al. 2022 \cite{zhang2022wheeled}
+& Địa hình biết một phần & A* + Q-learning & Rủi ro vùng chưa quan sát?\\
+Lee et al. 2023 \cite{lee2023uncertainty}
+& Điều hướng 3D bất định & Learning-based uncertainty & Hiệu chuẩn với rủi ro vật lý?\\
+Wang et al. 2024 \cite{wang2024history}
+& Điều hướng chưa biết map & Tree + history graph & Thay đổi địa hình ảnh hưởng latency?\\
+Feng et al. 2025 \cite{feng2025constraint}
+& Địa hình công trường & Patch-RRT* + tối ưu quỹ đạo & Bền vững khi sai số bản đồ?\\
+Ji et al. 2025 \cite{ji2025nnpp}
+& Tăng tốc tìm đường & Heuristic học được & Chi phí và giới hạn an toàn?\\
+Beycimen et al. 2026 \cite{beycimen2026fusion}
+& Traversability mapping & Geometry + appearance fusion & Uncertainty của map đến planner?\\
+Gai et al. 2026 \cite{gai2026framework}
+& Động học và terrain & Planning + tracking & Kiểm chứng dưới rủi ro bất định?\\
+Wang et al. 2026 \cite{wang2026winter}
+& Rủi ro mùa đông & Risk model + Hybrid A* & Chuyển miền sang mặt đất khác?\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Định hướng bài toán và phương pháp khởi đầu}
+\subsection{Đầu vào, đầu ra và giả định}
+Cho elevation grid map \(\mathcal{M}\), trạng thái đầu \(s\),
+đích \(g\), đặc trưng hình học và thông số robot.
+Phiên bản 1 tìm đường \(\pi=(v_0,\ldots,v_N)\) trên lưới.
+Phiên bản 2 có thể tìm kiếm trên trạng thái
+\((x,y,\theta)\), đồng thời kiểm tra bán kính quay và tư thế xe.
+Không nên gọi phiên bản 1 là motion planning đầy đủ.
+
+\subsection{Hàm chi phí minh họa}
+Với cạnh có chiều dài thực \(d_{ij}>0\), một baseline đơn giản:
+\begin{equation}
+ c_{ij}=d_{ij}\left(
+ 1+\lambda_s \widehat S_{ij}
+  +\lambda_r \widehat R_{ij}
+  +\lambda_u \widehat U_{ij}\right),
+ \quad \lambda_s,\lambda_r,\lambda_u\geq 0.
+ \label{eq:cost}
+\end{equation}
+Các đại lượng có dấu mũ được chuẩn hóa trên cùng quy ước
+và không âm. Thành phần 1 cho phép dùng khoảng cách Euclid
+như một cận dưới của tổng chi phí trong điều kiện phù hợp.
+\(\widehat U\) là độ bất định của phép đo hoặc mô hình;
+nó \textbf{không đồng nghĩa} với xác suất robot thất bại.
+
+Các điều kiện khả thi ban đầu:
+\begin{equation}
+ \pi\subseteq\mathcal X_{\mathrm{free}},\quad
+ S_{ij}\leq S_{\max},\quad
+ H^{\mathrm{step}}_{ij}\leq H_{\max}.
+\end{equation}
+Các ngưỡng phải liên hệ với robot và mô hình an toàn cụ thể.
+
+\subsection{Hướng phát triển: chance-constrained risk}
+Nếu có thể ước lượng xác suất sự cố đáng tin cậy,
+một hướng phát triển là:
+\begin{equation}
+ \begin{aligned}
+ \min_\pi\quad &J_{\mathrm{nominal}}(\pi)\\
+ \mathrm{s.t.}\quad &
+ \mathbb{P}(\text{failure trên toàn }\pi)\leq\varepsilon.
+ \end{aligned}
+ \label{eq:chance}
+\end{equation}
+Không được cộng các xác suất sự cố rồi gọi đó là xác suất
+của cả đường. Bất đẳng thức hợp cho cận trên
+\(\mathbb{P}(\cup_i F_i)\leq\sum_i\mathbb{P}(F_i)\)
+mà không cần giả định độc lập, nhưng có thể bảo thủ.
+Việc hiệu chuẩn và kiểm tra phụ thuộc giữa các sự kiện là
+một phần quan trọng của nghiên cứu sâu hơn.
+
+\subsection{Ba research questions cần kiểm chứng}
+\begin{enumerate}[label=\textbf{RQ\arabic*.}]
+\item \textbf{Uncertainty:} Mô hình uncertainty được hiệu chuẩn
+có giúp giảm vi phạm giới hạn an toàn trên bản đồ nhiễu/thiếu dữ liệu
+so với chi phí hình học đơn thuần hay không?
+\item \textbf{Online replanning:} D* Lite với cập nhật cost map
+có giảm độ trễ so với chạy lại A* từ đầu mà vẫn đạt cùng điều kiện
+an toàn và tiêu chí cost hay không?
+\item \textbf{Motion feasibility:} Bổ sung heading, turning radius
+và traversability phụ thuộc hướng có giảm đường đi không thực thi được
+trong mô phỏng robot hay không?
+\end{enumerate}
+Các câu hỏi này \emph{chưa được khẳng định là research gap mới}.
+Trước khi chọn luận văn cần đối chiếu sâu với
+\cite{lee2023uncertainty,wang2024history,feng2025constraint,gai2026framework,wang2026winter}.
+
+\section{Thiết kế thực nghiệm và tiêu chí đánh giá}
+\subsection{Baseline}
+Thứ tự ưu tiên: (1) A* khoảng cách; (2) A* với slope/roughness
+và ràng buộc cứng; (3) A* cộng uncertainty penalty;
+(4) D* Lite trên cùng bản đồ chi phí;
+(5) Hybrid A* khi đã xác định rõ loại lái.
+Cần giữ cố định độ phân giải map, kích thước robot,
+điểm đầu--đích và ngân sách thời gian tính toán.
+Không so sánh trực tiếp giá trị tối ưu của hai planner
+giải hai bài toán khả thi khác nhau.
+
+\subsection{Kịch bản và chỉ số}
+Sử dụng nhiều loại DEM: phẳng, đồi dốc, gồ ghề,
+và vùng chưa quan sát; thay đổi mức nhiễu và số lần cập nhật bản đồ.
+Tách dữ liệu xây dựng cost map khỏi dữ liệu ground truth dùng
+để kiểm tra độ an toàn.
+
+\begin{table}[htbp]
+\centering\small
+\caption{Chỉ số cần báo cáo cho thí nghiệm.}
+\begin{tabularx}{\textwidth}{@{}p{3.2cm}Y@{}}
+\toprule
+Chỉ số & Ý nghĩa / điều kiện \\
+\midrule
+Planning success rate & Tỷ lệ trả về đường; khác với tỷ lệ robot thực thi thành công \\
+Path length (m) & Độ dài trong hệ tọa độ vật lý, không chỉ số ô lưới \\
+Terrain cost & Dùng cùng định nghĩa cost khi so sánh \\
+Constraint violations & Vượt ngưỡng dốc, bậc, roll risk hoặc clearance \\
+Runtime / expansions & Báo cáo máy chạy, số node mở rộng, trung vị và phân vị cao \\
+Replanning latency & Thời gian phản ứng khi map cập nhật, với cùng ngân sách tính toán \\
+Failure / slip / rollover & Chỉ kết luận khi mô phỏng/đo đạc đủ tin cậy \\
+Risk calibration & Mức khớp giữa xác suất dự đoán và tần suất quan sát \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Ablation và reproducibility}
+Tiến hành ablation bỏ lần lượt slope, roughness,
+uncertainty và giới hạn chuyển động.
+Thử nhiều random seed và nhiều vùng địa hình khác nhau;
+báo cáo độ phân tán hoặc khoảng tin cậy,
+không chỉ lấy một hình đường đi đẹp.
+Công bố tham số xe, map resolution, seed, thư viện,
+phần cứng và mã xử lý dữ liệu.
+
+\section{Research gap và kế hoạch thạc sĩ}
+\subsection{Phân biệt limitation với khoảng trống thực sự}
+Một tác giả chưa triển khai một chức năng không chứng minh
+rằng cộng đồng chưa giải quyết nó. Research gap cần có
+ba loại bằng chứng: (i) literature search đủ sâu;
+(ii) thất bại hoặc giới hạn đo được của baseline mạnh;
+(iii) phương pháp mới có thể khắc phục và được kiểm chứng độc lập.
+Một công thức trọng số cộng hoặc thay A* bằng Hybrid A*
+không tự tạo ra tính mới đủ cho một tạp chí Q1.
+
+\subsection{Ba hướng đề tài ứng viên}
+\begin{description}[leftmargin=0pt,style=nextline]
+\item[\textbf{A. Risk-calibrated path planning.}]
+Tập trung vào cách chuyển uncertainty thành xác suất rủi ro
+có thể kiểm định và tối ưu đường với giới hạn xác suất sự cố.
+Đối chiếu trực tiếp \cite{benrabah2024risk,lee2023uncertainty,wang2026winter}.
+\item[\textbf{B. Incremental replanning under uncertain updates.}]
+Kết hợp cập nhật map có sai số với tìm kiếm gia tăng,
+kiểm tra độ trễ và chi phí tính toán khi thông tin mới đến;
+A* khởi động lại và D* Lite là baseline.
+\item[\textbf{C. Direction-dependent vehicle-aware planning.}]
+Đánh giá rủi ro leo/xuống/ngang dốc trên \((x,y,\theta)\),
+gắn với bán kính quay và ổn định của xe;
+so sánh \cite{feng2025constraint,gai2026framework}.
+\end{description}
+
+\subsection{Rủi ro của luận văn}
+Nghiên cứu trên DEM tự sinh không thể chứng minh xe thật
+không trượt hay lật. Semantic labels cũng không trực tiếp là
+ground truth về độ ma sát. Nếu hướng tới công bố ở tạp chí
+robotics có yêu cầu cao, cần dùng benchmark độc lập,
+mô phỏng đã kiểm tra và thực nghiệm thực khi có điều kiện.
+Kết luận về Q1 phải xét năm và hệ thống phân hạng cụ thể,
+không thể bảo đảm từ tên đề tài.
+
+\subsection{Lộ trình sáu tháng}
+\begin{table}[htbp]
+\centering\small
+\caption{Lộ trình đề xuất để chuyển từ literature review sang thực nghiệm.}
+\begin{tabularx}{\textwidth}{@{}p{1.9cm}Yp{4.1cm}@{}}
+\toprule
+Giai đoạn & Công việc & Bàn giao \\
+\midrule
+Tháng 1 & A*, D* Lite, DEM, slope, roughness & Baseline A* và báo cáo đọc bài\\
+Tháng 2 & Cost map và benchmark nhiều địa hình & Kết quả có thể tái lập\\
+Tháng 3 & Nhiễu, uncertainty, risk calibration & Bằng chứng cho vấn đề nghiên cứu\\
+Tháng 4 & Thiết kế phương pháp và protocol & Bản mô tả thuật toán\\
+Tháng 5 & Ablation, robustness, statistical tests & Bảng kết quả và phân tích\\
+Tháng 6 & Replanning hoặc motion feasibility & Bản thảo luận văn/bài báo đầu tiên\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Kết luận}
+Terrain-aware path planning cho robot bánh xe là sự kết hợp
+giữa hiểu biết địa hình, thuật toán tìm đường và mô hình
+khả năng di chuyển của xe. A* là baseline phù hợp để bắt đầu,
+D* Lite là nền tảng nghiên cứu cập nhật bản đồ, và Hybrid A*
+mở rộng bài toán sang trạng thái có hướng. Các công trình
+2024--2026 đã nghiên cứu sâu về risk, traversability
+và kinematics; vì vậy, nghiên cứu mới cần một vấn đề
+được chứng minh bằng so sánh có kiểm soát.
+Hướng ưu tiên là lập kế hoạch có xét rủi ro/uncertainty
+trên elevation map và đánh giá khả năng cập nhật đường đi.
+Phạm vi luận văn cuối cùng chỉ nên chốt sau khi đã tái hiện
+baseline và kiểm chứng giả thuyết research gap.
+
+\clearpage
+\printbibliography[heading=bibintoc,title={Tài liệu tham khảo}]
+\end{document}
