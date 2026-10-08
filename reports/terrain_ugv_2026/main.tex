@@ -1,9 +1,8 @@
 \documentclass[11pt,a4paper]{article}
-% Build: latexmk -xelatex -use-biber main.tex
+% Build: latexmk main.tex (the latexmkrc selects XeLaTeX + Biber).
+% fontspec uses the bundled, static Latin Modern fonts by default.
+% They support Vietnamese Unicode without system-specific Noto variable fonts.
 \usepackage{fontspec}
-\setmainfont{Noto Serif}
-\setsansfont{Noto Sans}
-\setmonofont{DejaVu Sans Mono}
 \usepackage{geometry}
 \geometry{left=2.5cm,right=2.45cm,top=2.7cm,bottom=2.6cm}
 \usepackage{microtype,amsmath,amssymb,mathtools,booktabs,tabularx,array}

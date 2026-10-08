@@ -11,16 +11,25 @@ Báo cáo tổng quan tài liệu bằng tiếng Việt, định hướng luận
 
 ## Biên dịch
 
-Cài XeLaTeX, Biber, latexmk và các font Noto Serif, Noto Sans, DejaVu Sans Mono.
+Cài XeLaTeX, Biber và latexmk. Font được sử dụng là **Latin Modern** mặc định, đi kèm TeX Live; không cần cài Noto/DejaVu riêng. Vẫn dùng **XeLaTeX** để xử lý tiếng Việt Unicode.
 
 ```bash
 cd reports/terrain_ugv_2026
-latexmk -xelatex main.tex
+latexmk main.tex
 ```
 
 Hoặc sử dụng `xelatex main.tex`, `biber main`, `xelatex main.tex`, `xelatex main.tex`.
 
-Trên Overleaf, chọn XeLaTeX và tài liệu gốc `main.tex`.
+Trên Overleaf, chọn XeLaTeX và tài liệu gốc `main.tex`. Trong VS Code, LaTeX Workshop có thể chạy `latexmk main.tex` để sử dụng `latexmkrc` sẵn có.
+
+Nếu từng biên dịch bằng Noto Variable Font trên Fedora và gặp lỗi `xdvipdfmx`, hãy xóa các file build cũ và chạy lại:
+
+```bash
+latexmk -C
+latexmk main.tex
+```
+
+Nếu còn những dòng `Overfull/Underfull \\hbox`, đó là cảnh báo dàn trang, không phải lỗi font khiến build dừng.
 
 ## Trước khi nộp
 
