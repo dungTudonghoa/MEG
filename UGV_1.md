@@ -22,7 +22,7 @@ Survey nền tảng [*Autonomous Driving in Unstructured Off-Road Environments: 
 
 Sơ đồ dưới đây là **cách diễn giải theo góc nhìn đề tài**, không phải sao chép nguyên sơ đồ của tác giả survey.
 
-\`\`\`mermaid
+```mermaid
 flowchart TD
     A["Cảm biến: Camera / LiDAR / IMU / GNSS / odometry"] --> B["Định vị và ước lượng trạng thái"]
     A --> C["Nhận thức: vật cản, bề mặt, hình học"]
@@ -36,7 +36,7 @@ flowchart TD
     H --> I["UGV tương tác với địa hình"]
     I --> A
     I -. "Phản hồi slip/traction và tái lập kế hoạch" .-> F
-\`\`\`
+```
 
 | Thành phần trong survey | Nó giải quyết điều gì? | Quan hệ với đề tài |
 |---|---|---|
