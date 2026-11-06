@@ -1,0 +1,15 @@
+{
+  "version": "phase06-pilot-v0.1",
+  "method": ["never", "fine_tune", "tta_head", "fomaml", "context"],
+  "target_domains_sealed": ["wet_mud", "wet_clay"],
+  "validation_domain": "dry_sand",
+  "source_domains": ["hardpack", "dry_grass", "gravel", "dirt"],
+  "shot": {"duration_s": 2, "hz": 10, "transitions": 20},
+  "k_primary": [0, 1, 2, 5, 10, 20],
+  "k_extended": [50],
+  "seeds": [41, 42],
+  "meta_train_uses_target": false,
+  "query_used_for_adaptation": false,
+  "terrain_physics": "synthetic_proxy_not_field_validated",
+  "planning": "phase05_astar_fixed_offline_route_audit_not_closed_loop"
+}

@@ -1,0 +1,55 @@
+{
+  "protocol": "phase04 v0.1 synthetic pilot (not frozen real-data benchmark)",
+  "methods": [
+    "never",
+    "fine_tune",
+    "tta_head",
+    "fomaml",
+    "context"
+  ],
+  "seeds": [
+    41,
+    42
+  ],
+  "k_levels": [
+    0,
+    1,
+    2,
+    5,
+    10,
+    20,
+    50
+  ],
+  "shot_definition": "20 10-Hz transitions = 2.0s of one support window",
+  "source_families": [
+    "hardpack",
+    "dry_grass",
+    "gravel",
+    "dirt"
+  ],
+  "validation_families": [
+    "dry_sand"
+  ],
+  "test_families": [
+    "wet_mud",
+    "wet_clay"
+  ],
+  "planning_audit_tasks_per_family_per_seed": 2,
+  "n_source_tasks_per_family": 10,
+  "n_validation_tasks_per_family": 4,
+  "n_test_tasks_per_family": 5,
+  "source_train_steps": 300,
+  "fomaml_meta_steps": 100,
+  "context_meta_steps": 450,
+  "fomaml_tasks_per_outer_step": 3,
+  "source_data_access": "all source tasks only",
+  "meta_test_query_use": "evaluation only",
+  "test_task_ids_sha256": "1464a1a344534ba72a3dd361d8a4560cf9f621546f72c7c88b0c009b8caa1334",
+  "torch": "2.10.0+cpu",
+  "numpy": "2.3.5",
+  "python": "3.13.5 (main, Jul 15 2026, 20:25:40) [GCC 14.2.0]",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "actual_dataset": "none - synthetic task generator",
+  "closed_loop_physics": "none - fixed Phase05 A* with post-plan truth audit only",
+  "random_seed_policy": "SHA256 deterministic per split/family/task/run"
+}

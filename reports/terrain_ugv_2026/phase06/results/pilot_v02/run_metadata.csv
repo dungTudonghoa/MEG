@@ -1,0 +1,3 @@
+seed,source_training_seconds,fomaml_training_seconds,context_training_seconds,source_tasks,validation_tasks,test_tasks
+41,0.4933458890000111,1.55704433599999,0.9158975190000547,40,4,10
+42,0.44015515600005983,1.3136219750000464,0.915172188999918,40,4,10
