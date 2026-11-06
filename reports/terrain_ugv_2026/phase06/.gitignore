@@ -1,0 +1,10 @@
+__pycache__/
+.pytest_cache/
+.venv/
+*.pyc
+results/smoke/
+results/quick_bridge/
+results/pilot_v01/
+run.log
+quick.log
+run_v02.log
