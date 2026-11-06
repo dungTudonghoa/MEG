@@ -1,0 +1,15 @@
+# Frozen baseline v0.1. Changing these values requires a new benchmark version.
+protocol_version: '0.1'
+scenarios: [flat, slope, rough, hazard, unknown]
+seeds: [42, 43, 44, 45, 46]
+planners: [geometry, terrain]
+vehicle:
+  radius_m: 0.18
+  v_max_mps: 0.75
+  w_max_rps: 1.15
+  accel_max_mps2: 0.65
+  slope_max_deg: 17.0
+  roughness_max_m: 0.10
+  slip_proxy_max: 0.56
+  dt_s: 0.16
+  goal_tolerance_m: 0.14
