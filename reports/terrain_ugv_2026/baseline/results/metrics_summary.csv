@@ -1,0 +1,11 @@
+scenario,planner,n,success_rate,unsafe_plan_rate,safety_stop_rate,median_planning_ms,mean_planned_length_m
+flat,geometry,5,1.0,0.0,0.0,0.7673,14.440000000000001
+flat,terrain,5,1.0,0.0,0.0,14.5583,14.440000000000001
+slope,geometry,5,0.0,1.0,1.0,0.4335,14.440000000000001
+slope,terrain,5,1.0,0.0,0.0,35.5058,20.41172
+rough,geometry,5,0.0,1.0,1.0,0.4514,14.440000000000001
+rough,terrain,5,1.0,0.0,0.0,21.5032,17.2732
+hazard,geometry,5,0.0,1.0,1.0,0.5169,14.440000000000001
+hazard,terrain,5,1.0,0.0,0.0,20.0547,16.9584
+unknown,geometry,5,0.0,1.0,1.0,0.6854,14.440000000000001
+unknown,terrain,5,1.0,0.0,0.0,19.6029,18.2558
